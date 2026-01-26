@@ -1,0 +1,1 @@
+if('serviceWorker' in navigator) {window.addEventListener('load', () => {navigator.serviceWorker.register('/sd-measure-app/sw.js', { scope: '/sd-measure-app/' })})}
