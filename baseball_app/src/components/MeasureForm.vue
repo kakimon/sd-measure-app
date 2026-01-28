@@ -35,7 +35,12 @@
     <!-- 記録 -->
     <div class="field">
       <label>{{ valueLabel }}</label>
-      <input type="number" v-model="localValue" step="0.01" />
+      <input
+        type="number"
+        v-model="localValue"
+        step="0.01"
+        placeholder="記録を入力"
+      />
     </div>
 
     <button class="primary" @click="onSubmit">
@@ -47,34 +52,46 @@
 <script setup>
 import { ref, computed, watch } from "vue";
 
-/* 親から受け取る */
+/* ===== props（親から受け取る） ===== */
 const props = defineProps({
   event: String,
   date: String,
   members: {
     type: Array,
     default: () => []
+  },
+  clearKey: {
+    type: Number,
+    default: 0
   }
 });
 
-/* 親へ通知 */
+/* ===== emit（親へ通知） ===== */
 const emit = defineEmits([
   "update:event",
   "update:date",
   "submit"
 ]);
 
-/* ローカル状態 */
+/* ===== ローカル状態 ===== */
 const localEvent = ref(props.event);
 const localDate = ref(props.date);
 const localValue = ref("");
 const selectedMember = ref("");
 
-/* 親と同期 */
+/* ===== 親と同期 ===== */
 watch(localEvent, v => emit("update:event", v));
 watch(localDate, v => emit("update:date", v));
 
-/* 表示ラベル */
+/* ===== クリア指示を監視（ここが今回の肝） ===== */
+watch(
+  () => props.clearKey,
+  () => {
+    localValue.value = "";
+  }
+);
+
+/* ===== 表示ラベル ===== */
 const valueLabel = computed(() => {
   return {
     m50: "記録（秒）",
@@ -84,7 +101,7 @@ const valueLabel = computed(() => {
   }[localEvent.value];
 });
 
-/* 登録 */
+/* ===== 登録 ===== */
 function onSubmit() {
   emit("submit", {
     event: localEvent.value,
@@ -92,7 +109,6 @@ function onSubmit() {
     value: localValue.value,
     token: selectedMember.value
   });
-
-  localValue.value = "";
+  // ❌ ここではクリアしない（親の判断に任せる）
 }
 </script>

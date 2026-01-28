@@ -29,8 +29,22 @@
       v-model:event="event"
       v-model:date="date"
       :members="members"
+      :clear-key="clearKey"
       @submit="submit"
     />
+
+    <!-- 直近登録履歴 ★ここに追加 -->
+    <div v-if="recentRecords.length" class="recent">
+      <h4>🕒 直近の登録</h4>
+      <ul>
+        <li v-for="(r, i) in recentRecords" :key="i">
+        {{ r.name }}｜
+        {{ EVENT_LABEL[r.event] }}｜
+        {{ r.value }}｜
+        {{ r.date }}
+        </li>
+      </ul>
+    </div>
 
     <!-- 新規選手登録（仮） -->
     <main v-if="page === 'register'" class="page">
@@ -58,6 +72,14 @@
 import { ref, onMounted } from "vue";
 import AppHeader from "./components/AppHeader.vue";
 import MeasureForm from "./components/MeasureForm.vue";
+
+/* ===== 定数 ===== */
+const EVENT_LABEL = {
+m50: "50m",
+jump: "立ち幅",
+shuttle: "シャトル",
+ball: "投球"
+};
 
 /* ===== GAS URL ===== */
 const GAS_BASE_URL =
@@ -94,6 +116,9 @@ function go(p) {
   menuOpen.value = false;
 }
 
+/* ===== 直近登録履歴 ===== */
+const recentRecords = ref([]);
+
 /* ===== トースト表示 ===== */
 function showToast(msg) {
   toast.value = msg;
@@ -101,6 +126,9 @@ function showToast(msg) {
     toast.value = "";
   }, 2000);
 }
+
+/* ===== 入力クリアタイミング ===== */
+const clearKey = ref(0);
 
 /* ===== members 読み込み ===== */
 async function loadMembers() {
@@ -133,16 +161,53 @@ function submit(value) {
     return;
   }
 
+  // 🔽 二重登録チェック（同日・同選手・同種目）
+  const duplicated = recentRecords.value.find(r =>
+  r.token === value.token &&
+  r.date === value.date &&
+  r.event === value.event
+  );
+
+
+  if (duplicated) {
+  const ok = window.confirm(
+  "同じ選手・同じ日・同じ種目の記録があります。\n上書き登録しますか？"
+  );
+  if (!ok) return;
+  }
+
   fetch(GAS_POST_URL, {
     method: "POST",
-    mode: "no-cors", // ★ CORS回避の要
+    mode: "no-cors", // CORS回避
     headers: {
       "Content-Type": "application/json",
     },
     body: JSON.stringify(value),
   })
     .then(() => {
-      showToast("登録しました");
+      // 🔽 選手名を token から逆引き
+      const member = members.value.find(m => m.token === value.token);
+
+      // 🔽 直近登録履歴へ追加
+      recentRecords.value.unshift({
+        name: member?.name || "不明",
+        token: value.token,
+        event: value.event,
+        value: value.value,
+        date: value.date
+      });
+
+      // 最大5件まで
+      recentRecords.value = recentRecords.value.slice(0, 5);
+
+      // 🔽 トーストを具体化
+      showToast(
+        `${member?.name || ""}｜${EVENT_LABEL[value.event]}｜${value.value} を登録しました`
+      );
+      // 🔽 少し待ってからクリア（UX向上）
+      setTimeout(() => {
+        clearKey.value++;
+      }, 500);
     })
     .catch(err => {
       console.error("POST error:", err);
@@ -184,3 +249,28 @@ onMounted(() => {
   loadMembers();
 });
 </script>
+
+<style>
+/* 直近登録履歴 */
+.recent {
+  margin: 16px;
+  padding: 8px;
+  background: #f7f9fc;
+  border-radius: 6px;
+  font-size: 13px;
+}
+
+.recent h4 {
+  margin: 0 0 4px;
+  font-size: 14px;
+}
+
+.recent ul {
+  padding-left: 16px;
+  margin: 0;
+}
+
+.recent li {
+  line-height: 1.4;
+}
+</style>
