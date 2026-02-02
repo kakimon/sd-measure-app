@@ -21,6 +21,9 @@
       <div class="menu-item" @click="go('register')">
         新規選手登録
       </div>
+      <div class="menu-item" @click="go('players')">
+        📊 選手データ確認
+      </div>
     </aside>
 
     <!-- 測定入力 -->
@@ -60,6 +63,34 @@
         登録してURL発行（仮）
       </button>
     </main>
+
+    <!-- 選手データ確認 -->
+    <main v-if="page === 'players'" class="page">
+      <h3>📊 選手データ一覧</h3>
+
+      <ul class="player-list">
+        <li v-for="m in members" :key="m.token" class="player-item">
+          <!-- 選手名クリック：グラフページへ -->
+          <a
+            :href="m.url"
+            target="_blank"
+            rel="noopener"
+            class="player-link"
+          >
+            {{ m.name }}
+          </a>
+
+          <!-- URLコピー -->
+          <button
+            class="copy-btn"
+            @click="copyUrl(m)"
+          >
+            📋 URLコピー
+          </button>
+        </li>
+      </ul>
+    </main>
+
 
     <!-- トースト -->
     <div class="toast" v-if="toast">
@@ -127,6 +158,22 @@ function showToast(msg) {
   }, 2000);
 }
 
+/* ===== URLコピー ===== */
+function copyUrl(member) {
+  if (!member?.url) {
+    showToast("URLが見つかりません");
+    return;
+  }
+
+  navigator.clipboard.writeText(member.url)
+    .then(() => {
+      showToast(`${member.name} のURLをコピーしました`);
+    })
+    .catch(() => {
+      showToast("コピーに失敗しました");
+    });
+}
+
 /* ===== 入力クリアタイミング ===== */
 const clearKey = ref(0);
 
@@ -153,6 +200,7 @@ async function loadMembers() {
     showToast("選手一覧の取得に失敗しました");
   }
 }
+console.log("members raw:", JSON.parse(JSON.stringify(members.value)));
 
 /* ===== 測定登録 ===== */
 function submit(value) {
@@ -273,4 +321,39 @@ onMounted(() => {
 .recent li {
   line-height: 1.4;
 }
+
+/* 選手一覧 */
+.player-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.player-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 4px;
+  border-bottom: 1px solid #eee;
+}
+
+.player-link {
+  text-decoration: none;
+  color: #1a73e8;
+  font-weight: 500;
+}
+
+.copy-btn {
+  font-size: 12px;
+  padding: 4px 8px;
+  border: none;
+  background: #f0f2f5;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.copy-btn:hover {
+  background: #e0e3e7;
+}
+
 </style>
