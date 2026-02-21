@@ -5,6 +5,7 @@ import RegisterView from "../views/RegisterView.vue";
 import AdminEventsView from "../views/AdminEventsView.vue";
 import PlayerView from "../views/PlayerView.vue"
 import MembersView from "../views/MembersView.vue"
+import MemberRegisterView from "../views/MemberRegisterView.vue"
 
 const routes = [
   {
@@ -35,6 +36,10 @@ const routes = [
     path: "/members",
     component: MembersView
   },
+  {
+    path: "/member-register",
+    component: MemberRegisterView,
+  }
 ];
 
 const router = createRouter({

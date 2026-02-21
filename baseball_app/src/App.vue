@@ -33,6 +33,10 @@
       >
         測定登録
       </RouterLink>
+      
+      <RouterLink to="/member-register" class="tab">
+        選手登録
+      </RouterLink>
 
       <RouterLink
         to="/admin/events"

@@ -13,10 +13,12 @@
     <div class="card bg-base-100 shadow">
       <div class="card-body">
 
+        <!-- ローディング -->
         <div v-if="loading" class="flex justify-center py-8">
           <span class="loading loading-spinner loading-lg"></span>
         </div>
 
+        <!-- 一覧 -->
         <div v-else-if="members.length">
 
           <div
@@ -33,18 +35,30 @@
               {{ m.name }}
             </div>
 
-            <!-- URLコピー -->
-            <button
-              class="btn btn-sm btn-outline"
-              @click="copyUrl(m.token)"
-            >
-              URLコピー
-            </button>
+            <!-- ボタン群 -->
+            <div class="flex gap-2">
+
+              <button
+                class="btn btn-sm btn-outline"
+                @click="copyUrl(m.token)"
+              >
+                URLコピー
+              </button>
+
+              <button
+                class="btn btn-sm btn-error btn-outline"
+                @click="deleteMember(m)"
+              >
+                削除
+              </button>
+
+            </div>
 
           </div>
 
         </div>
 
+        <!-- 空表示 -->
         <div v-else class="text-center text-base-content/60 py-8">
           登録選手がいません
         </div>
@@ -52,6 +66,21 @@
       </div>
     </div>
 
+  </div>
+
+  <!-- トースト -->
+  <div
+    v-if="toastMessage"
+    class="fixed top-6 left-1/2 -translate-x-1/2 z-50"
+  >
+    <div
+      class="alert shadow-lg px-6 py-3"
+      :class="toastType === 'success'
+        ? 'alert-success'
+        : 'alert-error'"
+    >
+      <span>{{ toastMessage }}</span>
+    </div>
   </div>
 </template>
 
@@ -72,6 +101,9 @@ const members = ref([])
 const loading = ref(false)
 const router = useRouter()
 
+const toastMessage = ref("")
+const toastType = ref("success")
+
 /*************************************************
  * 選手一覧取得
  *************************************************/
@@ -82,7 +114,6 @@ async function loadMembers() {
     const res = await fetch(`${GAS_BASE_URL}?type=members`)
     members.value = await res.json()
   } catch (e) {
-    console.error(e)
     members.value = []
   } finally {
     loading.value = false
@@ -99,11 +130,53 @@ function goToPlayer(token) {
 /*************************************************
  * URLコピー
  *************************************************/
-function copyUrl(token) {
+async function copyUrl(token) {
   const url = `${window.location.origin}/#/player/${token}`
+  await navigator.clipboard.writeText(url)
+  showToast("URLをコピーしました", "success")
+}
 
-  navigator.clipboard.writeText(url)
-  alert("URLをコピーしました")
+/*************************************************
+ * 削除（安定版）
+ *************************************************/
+async function deleteMember(member) {
+
+  if (!confirm(`${member.name} を削除しますか？`)) return
+
+  try {
+
+    const res = await fetch(GAS_BASE_URL, {
+      method: "POST",
+      body: JSON.stringify({
+        type: "deleteMember",
+        token: member.token
+      }),
+    })
+
+    const data = await res.json()
+
+    if (data.status === "ok") {
+      showToast("削除しました", "success")
+      await loadMembers()
+    } else {
+      showToast(data.message || "削除に失敗しました", "error")
+    }
+
+  } catch (err) {
+    showToast("削除エラー", "error")
+  }
+}
+
+/*************************************************
+ * トースト
+ *************************************************/
+function showToast(message, type) {
+  toastMessage.value = message
+  toastType.value = type
+
+  setTimeout(() => {
+    toastMessage.value = ""
+  }, 2500)
 }
 
 /*************************************************

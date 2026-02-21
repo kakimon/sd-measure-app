@@ -11,6 +11,18 @@
     <div class="card bg-base-100 shadow">
       <div class="card-body space-y-6">
 
+        <!-- 日付 -->
+        <div class="form-control w-full">
+        <label class="label">
+            <span class="label-text font-semibold">日付</span>
+        </label>
+        <input
+            v-model="selectedDate"
+            type="date"
+            class="input input-bordered input-lg w-full"
+        />
+        </div>
+
         <!-- 種目 -->
         <div class="form-control w-full">
           <label class="label">
@@ -34,13 +46,22 @@
         <!-- 選手 -->
         <div class="form-control w-full">
           <label class="label">
-            <span class="label-text font-semibold">選手名（token）</span>
+            <span class="label-text font-semibold">選手</span>
           </label>
-          <input
-            v-model="inputName"
-            placeholder="選手名またはtoken"
-            class="input input-bordered input-lg w-full"
-          />
+
+          <select
+            v-model="selectedToken"
+            class="select select-bordered select-lg w-full"
+          >
+            <option disabled value="">選手を選択</option>
+            <option
+              v-for="m in members"
+              :key="m.token"
+              :value="m.token"
+            >
+              {{ m.name }}
+            </option>
+          </select>
         </div>
 
         <!-- 記録 -->
@@ -64,6 +85,30 @@
           登録する
         </button>
 
+        <!-- 今日の記録 -->
+        <div v-if="todayRecords.length" class="mt-8">
+
+        <h2 class="text-lg font-bold mb-3">
+            {{ selectedDate }} の記録
+        </h2>
+
+        <div class="bg-base-200 rounded-box p-4 space-y-2">
+
+            <div
+            v-for="r in todayRecords"
+            :key="r.name + r.value"
+            class="flex justify-between"
+            >
+            <span>{{ r.name }}</span>
+            <span class="font-semibold">
+                {{ r.value }}
+            </span>
+            </div>
+
+        </div>
+
+        </div>
+
       </div>
     </div>
 
@@ -71,16 +116,20 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from "vue"
+import { ref, onMounted, watch } from "vue"
 
 const GAS_BASE_URL =
   "https://script.google.com/macros/s/AKfycbxqKwmN0lePHkLrQzU4SImrrANWpq4bXA3ZNJhGeufV1XsRNao8LO3RzfhLOYtTis8U/exec"
 
 const events = ref([])
+const members = ref([])
+const selectedDate = ref("")
 const selectedEvent = ref("")
-const inputName = ref("")
+const selectedToken = ref("")
 const inputValue = ref("")
 const loading = ref(false)
+const todayRecords = ref([])
+
 
 /* 種目取得 */
 async function loadEvents() {
@@ -91,8 +140,16 @@ async function loadEvents() {
   }
 }
 
+/* 選手取得 */
+async function loadMembers() {
+  const res = await fetch(`${GAS_BASE_URL}?type=members`)
+  members.value = await res.json()
+}
+
+/* 登録 */
 async function registerRecord() {
-  if (!selectedEvent.value || !inputName.value || !inputValue.value) {
+
+  if (!selectedEvent.value || !selectedToken.value || !inputValue.value) {
     alert("全て入力してください")
     return
   }
@@ -102,12 +159,13 @@ async function registerRecord() {
   try {
     const today = new Date().toISOString().slice(0, 10)
 
-    const res = await fetch(`${GAS_BASE_URL}?type=register`, {
+    const res = await fetch(GAS_BASE_URL, {
       method: "POST",
       body: JSON.stringify({
-        token: inputName.value,
-        date: today,
-        event: selectedEvent.value,   // ★ここが重要
+        type: "register",
+        token: selectedToken.value,
+        date: selectedDate.value,
+        event: selectedEvent.value,
         value: inputValue.value,
       }),
     })
@@ -117,9 +175,11 @@ async function registerRecord() {
     if (result.status === "ok") {
       inputValue.value = ""
       alert("登録しました")
+      await loadTodayRecords()
     } else {
       alert(result.message)
     }
+
   } catch (e) {
     alert("登録に失敗しました")
   } finally {
@@ -127,5 +187,28 @@ async function registerRecord() {
   }
 }
 
-onMounted(loadEvents)
+/* 登録表示 */
+async function loadTodayRecords() {
+
+  if (!selectedEvent.value || !selectedDate.value) return
+
+  const res = await fetch(
+    `${GAS_BASE_URL}?type=stats&event=${selectedEvent.value}&date=${selectedDate.value}`
+  )
+
+  todayRecords.value = await res.json()
+}
+
+onMounted(async () => {
+  const today = new Date().toISOString().slice(0, 10)
+  selectedDate.value = today
+
+  await loadEvents()
+  await loadMembers()
+  await loadTodayRecords()
+})
+
+
+watch([selectedEvent, selectedDate], loadTodayRecords)
+
 </script>
