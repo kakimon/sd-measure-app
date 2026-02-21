@@ -24,7 +24,7 @@
 
           <select
             v-model="selectedEvent"
-            class="select select-bordered select-lg w-full rounded-xl"
+            class="select select-bordered w-full h-14 text-base rounded-xl"
           >
             <option
               v-for="e in events"
@@ -47,7 +47,7 @@
           <input
             type="date"
             v-model="selectedDate"
-            class="input input-bordered input-lg w-full rounded-xl"
+            class="input input-bordered w-full　h-14 text-base rounded-xl"
           />
         </div>
 

@@ -61,6 +61,21 @@ const route = useRoute()
 </script>
 
 <style>
+/* --- iOS 安定化 --- */
+input,
+select {
+  font-size: 16px !important;
+}
+
+/* モバイル高さ安定 */
+@media (max-width: 640px) {
+  .select,
+  .input {
+    height: 3.5rem;
+  }
+}
+
+/* 印刷設定 */
 @media print {
   /* ナビゲーション全削除 */
   .navbar,

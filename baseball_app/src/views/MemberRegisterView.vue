@@ -22,7 +22,7 @@
             v-model="name"
             type="text"
             placeholder="例：山田 太郎"
-            class="input input-bordered input-lg w-full focus:input-primary"
+            class="input input-bordered w-full h-14 text-base focus:input-primary"
             @keyup.enter="registerMember"
           />
         </div>

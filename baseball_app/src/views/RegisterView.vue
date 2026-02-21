@@ -19,7 +19,7 @@
         <input
             v-model="selectedDate"
             type="date"
-            class="input input-bordered input-lg w-full"
+            class="input input-bordered w-full　h-14 text-base"
         />
         </div>
 
@@ -31,7 +31,7 @@
 
           <select
             v-model="selectedEvent"
-            class="select select-bordered select-lg w-full"
+            class="select select-bordered w-full h-14 text-base"
           >
             <option
               v-for="e in events"
@@ -51,7 +51,7 @@
 
           <select
             v-model="selectedToken"
-            class="select select-bordered select-lg w-full"
+            class="select select-bordered w-full h-14 text-base"
           >
             <option disabled value="">選手を選択</option>
             <option
@@ -72,7 +72,7 @@
           <input
             v-model="inputValue"
             type="number"
-            class="input input-bordered input-lg w-full"
+            class="input input-bordered w-full　h-14 text-base"
           />
         </div>
 

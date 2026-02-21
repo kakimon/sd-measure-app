@@ -41,7 +41,7 @@
 
         <select
           v-model="selectedEvent"
-          class="select select-bordered select-lg w-full font-semibold"
+          class="select select-bordered w-full h-14 text-base font-semibold"
         >
           <option
             v-for="event in events"
@@ -63,7 +63,7 @@
 
         <select
           v-model="selectedYear"
-          class="select select-bordered select-lg w-full font-semibold"
+          class="select select-bordered w-full h-14 text-base font-semibold"
         >
           <option value="">全て</option>
           <option
