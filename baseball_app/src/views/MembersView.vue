@@ -38,21 +38,22 @@
             <!-- ボタン群 -->
             <div class="flex gap-2">
 
+              <!-- URLコピー -->
               <button
-                class="btn btn-sm btn-outline"
+                class="btn btn-sm btn-accent"
                 @click="copyUrl(m.token)"
               >
                 URLコピー
               </button>
 
               <button
-                class="btn btn-sm btn-error btn-outline"
+                class="btn btn-sm btn-error"
                 @click="deleteMember(m)"
               >
                 削除
               </button>
-
             </div>
+
 
           </div>
 

@@ -23,7 +23,7 @@ html, body {
 
 #app {
   min-height: 100dvh;              /* iOS対策 */
-  display: flex;
+  display: block;
   flex-direction: column;
   background: #fff;
 }
@@ -79,29 +79,7 @@ html, body {
   z-index: 900;
 }
 
-.menu {
-  position: fixed;
-  top: 0;
-  left: -260px;
-  width: 240px;
-  height: 100dvh;
-  background: #ffffff;
-  box-shadow: 2px 0 8px rgba(0,0,0,0.25);
-  padding: 20px;
-  transition: left 0.25s ease;
-  z-index: 1000;
-}
 
-.menu.open {
-  left: 0;
-}
-
-.menu-item {
-  padding: 14px 4px;
-  border-bottom: 1px solid #eeeeee;
-  font-size: 16px;
-  cursor: pointer;
-}
 
 /* =========================
    Main Page

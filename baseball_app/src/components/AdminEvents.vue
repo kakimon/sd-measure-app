@@ -31,7 +31,14 @@
         </select>
       </div>
 
-      <button @click="addEvent">追加</button>
+      <button
+          class="btn btn-primary btn-lg w-full transition-all"
+          :class="{ loading: loading }"
+          :disabled="loading"
+          @click="registerMember"
+        >
+          追加
+        </button>
     </div>
 
     <!-- =========================
