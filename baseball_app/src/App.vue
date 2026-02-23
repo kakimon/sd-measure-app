@@ -22,7 +22,7 @@
           <div class="lg:hidden">
             <label
               for="app-drawer"
-              class="btn btn-square btn-ghost w-11 h-11 rounded-xl"
+              class="btn btn-square btn-ghost w-11 h-11 rounded-xl mt-2"
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -37,7 +37,7 @@
           </div>
 
           <!-- タイトル -->
-          <span class="text-lg font-bold tracking-tight">
+          <span class="text-lg font-semibold leading-none -mt-4">
             測定管理アプリ
           </span>
 
