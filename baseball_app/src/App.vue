@@ -15,24 +15,37 @@
     <div class="drawer-content flex flex-col min-h-screen bg-base-200">
 
       <!-- Navbar -->
-      <div class="navbar bg-base-100 shadow">
+      <div class="navbar bg-base-100 shadow-md px-4 sm:px-6">
+        <div class="flex items-center gap-2">
 
-        <!-- ハンバーガー（モバイルのみ表示） -->
-        <div class="flex-none lg:hidden">
-          <label for="app-drawer" class="btn btn-square btn-ghost">
-            ☰
-          </label>
+          <!-- ハンバーガー（モバイルのみ） -->
+          <div class="lg:hidden">
+            <label
+              for="app-drawer"
+              class="btn btn-square btn-ghost w-11 h-11 rounded-xl"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 512 512"
+                class="w-7 h-7 fill-current"
+              >
+                <rect y="60" width="512" height="60" />
+                <rect y="226" width="512" height="60" />
+                <rect y="392" width="512" height="60" />
+              </svg>
+            </label>
+          </div>
+
+          <!-- タイトル -->
+          <span class="text-lg font-bold tracking-tight">
+            測定管理アプリ
+          </span>
+
         </div>
-
-        <!-- タイトル -->
-        <div class="flex-1">
-          <span class="text-lg font-bold">測定管理アプリ</span>
-        </div>
-
       </div>
 
-      <!-- 画面本体 -->
-      <div class="flex-1 p-4 max-w-4xl mx-auto w-full">
+      <!-- ★ これが抜けていました -->
+      <div class="flex-1 p-4 max-w-3xl mx-auto w-full">
         <RouterView />
       </div>
 
@@ -45,66 +58,39 @@
       <label for="app-drawer" class="drawer-overlay"></label>
 
       <div class="w-64 min-h-screen bg-base-100 p-4 shadow-xl">
-
         <ul class="menu text-base-content gap-1">
 
           <li>
-            <RouterLink
-              to="/stats"
-              class="rounded-lg"
-              active-class="active"
-              @click="closeDrawer"
-            >
+            <RouterLink to="/stats" class="rounded-lg" @click="closeDrawer">
               種目別記録
             </RouterLink>
           </li>
 
           <li>
-            <RouterLink
-              to="/members"
-              class="rounded-lg"
-              active-class="active"
-              @click="closeDrawer"
-            >
+            <RouterLink to="/members" class="rounded-lg" @click="closeDrawer">
               選手一覧
             </RouterLink>
           </li>
 
           <li>
-            <RouterLink
-              to="/register"
-              class="rounded-lg"
-              active-class="active"
-              @click="closeDrawer"
-            >
+            <RouterLink to="/register" class="rounded-lg" @click="closeDrawer">
               測定登録
             </RouterLink>
           </li>
 
           <li>
-            <RouterLink
-              to="/member-register"
-              class="rounded-lg"
-              active-class="active"
-              @click="closeDrawer"
-            >
+            <RouterLink to="/member-register" class="rounded-lg" @click="closeDrawer">
               選手登録
             </RouterLink>
           </li>
 
           <li>
-            <RouterLink
-              to="/admin/events"
-              class="rounded-lg"
-              active-class="active"
-              @click="closeDrawer"
-            >
+            <RouterLink to="/admin/events" class="rounded-lg" @click="closeDrawer">
               種目管理
             </RouterLink>
           </li>
 
         </ul>
-
       </div>
     </div>
 
@@ -117,7 +103,6 @@ import { ref } from "vue"
 
 const drawerToggle = ref(null)
 
-/* モバイル時メニュー自動クローズ */
 function closeDrawer() {
   if (drawerToggle.value) {
     drawerToggle.value.checked = false
