@@ -41,11 +41,10 @@
 
   </div>
 
-  <!-- ✅ 完全fixedトースト -->
+  <!-- トースト -->
   <div
     v-if="toastMessage"
-    class="fixed top-6 left-1/2 -translate-x-1/2 z-50
-           transition-all duration-300 ease-out"
+    class="fixed top-6 left-1/2 -translate-x-1/2 z-50 transition-all duration-300 ease-out"
   >
     <div
       class="alert shadow-xl px-6 py-3"
@@ -86,17 +85,18 @@ async function registerMember() {
 
   try {
 
-    const res = await fetch(`${GAS_BASE_URL}?type=createMember`, {
+    const res = await fetch(GAS_BASE_URL, {
       method: "POST",
       body: JSON.stringify({
+        type: "createMember",   // ★ここ重要
         name: name.value.trim(),
       }),
     })
 
     const data = await res.json()
 
-    if (data.status === "error" || data.error) {
-      showToast(data.message || data.error, "error")
+    if (!res.ok || data.status === "error") {
+      showToast(data.message || "登録に失敗しました", "error")
       return
     }
 
@@ -108,7 +108,6 @@ async function registerMember() {
 
       name.value = ""
 
-      // 1.5秒後に一覧へ戻る
       setTimeout(() => {
         router.push("/members")
       }, 1500)
