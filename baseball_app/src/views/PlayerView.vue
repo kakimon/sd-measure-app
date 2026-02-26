@@ -9,7 +9,9 @@
       個人種目別記録
     </p>
 
-    <!-- ★ 兄弟タブ -->
+    <!-- ===============================
+         ★ 兄弟タブ（タブのみ）
+    ================================= -->
     <div role="tablist" class="tabs tabs-lift mt-4 mb-6 print-hide">
       <div
         v-for="p in players"
@@ -18,7 +20,6 @@
         class="tab flex items-center gap-2"
         :class="{ 'tab-active': currentToken === p.token }"
       >
-        <!-- 名前クリックで切替 -->
         <span
           class="cursor-pointer"
           @click="switchPlayer(p.token)"
@@ -26,7 +27,6 @@
           {{ p.label }}
         </span>
 
-        <!-- 本人以外は削除ボタン表示 -->
         <button
           v-if="p.token !== baseToken"
           class="text-xs text-error hover:scale-110 transition"
@@ -42,7 +42,67 @@
       </a>
     </div>
 
-    <!-- 印刷時サマリー -->
+    <!-- ===============================
+         🗓 休暇セクション（tabsの外）
+    ================================= -->
+    <div class="card bg-base-100 shadow-md p-6 mb-6">
+      <h2 class="text-lg font-bold mb-4">🗓 休暇連絡</h2>
+
+      <input
+        type="date"
+        v-model="absenceDate"
+        class="input input-bordered w-full mb-3"
+      />
+
+      <div class="flex gap-2 mb-4">
+        <button
+          class="btn btn-error btn-sm flex-1"
+          @click="registerAbsence('absent')"
+        >
+          欠席
+        </button>
+
+        <button
+          class="btn btn-warning btn-sm flex-1"
+          @click="registerAbsence('continue')"
+        >
+          10時以降参加
+        </button>
+      </div>
+
+      <div class="divider">履歴</div>
+
+      <div v-if="absences.length === 0" class="text-gray-400 text-sm">
+        登録なし
+      </div>
+
+      <div
+        v-for="a in absences"
+        :key="a.date"
+        class="flex justify-between items-center border-b py-2"
+      >
+        <div>
+          {{ a.date }}
+          <span
+            class="badge ml-2"
+            :class="a.type==='absent' ? 'badge-error' : 'badge-warning'"
+          >
+            {{ a.type==='absent' ? '欠席' : '10時以降参加' }}
+          </span>
+        </div>
+
+        <button
+          class="btn btn-ghost btn-xs text-error"
+          @click="deleteAbsence(a.date)"
+        >
+          ✕
+        </button>
+      </div>
+    </div>
+
+    <!-- ===============================
+         印刷時サマリー
+    ================================= -->
     <div class="mb-4 print-only">
       <p><strong>種目：</strong>{{ selectedEventName }}</p>
       <p><strong>対象年：</strong>
@@ -50,10 +110,11 @@
       </p>
     </div>
 
-    <!-- ===== 表示条件カード ===== -->
+    <!-- ===============================
+         表示条件カード
+    ================================= -->
     <div class="card bg-base-100 shadow-md p-6 mb-6 print-hide">
 
-      <!-- 上段：タイトル + PDF -->
       <div class="flex justify-between items-center mb-4">
         <h2 class="text-lg font-bold">表示条件</h2>
 
@@ -101,13 +162,17 @@
 
     </div>
 
-    <!-- ===== グラフ ===== -->
+    <!-- ===============================
+         グラフ
+    ================================= -->
     <div class="card bg-base-100 shadow-md p-6 mb-6">
       <h2 class="text-lg font-bold mb-4">推移グラフ</h2>
       <canvas ref="chartCanvas"></canvas>
     </div>
 
-    <!-- ===== テーブル ===== -->
+    <!-- ===============================
+         テーブル
+    ================================= -->
     <div class="card bg-base-100 shadow-md p-6">
       <h2 class="text-lg font-bold mb-4">記録一覧</h2>
 
@@ -133,7 +198,9 @@
       </table>
     </div>
 
-    <!-- ★ 追加モーダル -->
+    <!-- ===============================
+         追加モーダル
+    ================================= -->
     <dialog class="modal" :class="{ 'modal-open': addModalOpen }">
       <div class="modal-box">
         <h3 class="font-bold text-lg">兄弟を追加</h3>
@@ -186,6 +253,12 @@ const GAS_URL =
 const playerName = ref("")
 const events = ref([])
 const records = ref([])
+/* ===============================
+   ★ 休暇機能
+================================ */
+const absenceTab = ref(false)        // タブ切替用
+const absenceDate = ref("")
+const absences = ref([])
 
 const selectedEvent = ref("")
 const selectedYear = ref("")
@@ -363,6 +436,7 @@ async function switchPlayer(token) {
   currentToken.value = String(token || "")
   selectedYear.value = "" // 兄弟切替時は年フィルタ解除（好みで削除OK）
   await loadPlayerData()
+  await loadAbsences()
 }
 
 /* ===============================
@@ -443,6 +517,68 @@ if (String(currentToken.value) === String(token)) {
 }
 }
 /* ===============================
+   休暇履歴取得
+================================ */
+async function loadAbsences() {
+  if (!currentToken.value) return
+
+  const res = await fetch(
+    `${GAS_URL}?type=getAbsenceHistory&token=${currentToken.value}`
+  )
+  const json = await res.json()
+
+  if (json.status === "ok") {
+    absences.value = json.data
+  } else {
+    absences.value = []
+  }
+}
+/* ===============================
+   休暇登録
+================================ */
+async function registerAbsence(type) {
+  if (!absenceDate.value) {
+    alert("日付を選択してください")
+    return
+  }
+
+  await fetch(GAS_URL, {
+    method: "POST",
+    headers: {
+      "Content-Type": "text/plain;charset=utf-8"
+    },
+    body: JSON.stringify({
+      type: "registerAbsence",
+      token: currentToken.value,
+      date: absenceDate.value,
+      absenceType: type
+    })
+  })
+
+  absenceDate.value = ""
+  await loadAbsences()
+}
+/* ===============================
+   休暇削除
+================================ */
+async function deleteAbsence(date) {
+  if (!confirm("削除しますか？")) return
+
+  await fetch(GAS_URL, {
+    method: "POST",
+    headers: {
+      "Content-Type": "text/plain;charset=utf-8"
+    },
+    body: JSON.stringify({
+      type: "deleteAbsence",
+      token: currentToken.value,
+      date
+    })
+  })
+
+  await loadAbsences()
+}
+/* ===============================
    監視
 ================================ */
 watch(selectedEvent, loadPlayerData)
@@ -470,6 +606,7 @@ onMounted(async () => {
   loadSiblings()
   await loadEvents()
   await loadPlayerData()
+  await loadAbsences() 
 })
 </script>
 
