@@ -78,7 +78,7 @@
 
       <div
         v-for="a in absences"
-        :key="a.date"
+        :key="a.date + ':' + a.type + ':' + a.updatedAt"
         class="flex justify-between items-center border-b py-2"
       >
         <div>
@@ -252,11 +252,17 @@ const GAS_URL =
 ================================ */
 const playerName = ref("")
 const events = ref([])
+
+// 画面表示用（選択中種目の記録だけ入れる）
 const records = ref([])
+
+// ★ event別の全記録（dashboardから受け取る）
+const recordsByEvent = ref({})
+
 /* ===============================
    ★ 休暇機能
 ================================ */
-const absenceTab = ref(false)        // タブ切替用
+const absenceTab = ref(false)        // タブ切替用（未使用でもOK）
 const absenceDate = ref("")
 const absences = ref([])
 
@@ -306,57 +312,55 @@ const filteredRecords = computed(() => {
 })
 
 /* ===============================
-   種目取得
+   選択種目のrecordsを適用（API不要）
 ================================ */
-async function loadEvents() {
-  const res = await fetch(`${GAS_URL}?type=events`)
-  events.value = await res.json()
-  if (events.value.length > 0 && !selectedEvent.value) {
-    selectedEvent.value = events.value[0].id
-  }
+function applySelectedEventRecords_() {
+  const list = recordsByEvent.value[String(selectedEvent.value)] || []
+  records.value = [...list].sort((a, b) => a.date.localeCompare(b.date))
 }
 
 /* ===============================
-   個人データ取得（currentTokenで取得）
+   個人ダッシュボード取得（1回で全部）
+   ?type=playerDashboard&token=xxxx
 ================================ */
-async function loadPlayerData() {
-  if (!selectedEvent.value || !currentToken.value) return
+async function loadDashboard() {
+  if (!currentToken.value) return
 
   const res = await fetch(
-    `${GAS_URL}?type=playerStats&token=${currentToken.value}&event=${selectedEvent.value}`
+    `${GAS_URL}?type=playerDashboard&token=${encodeURIComponent(currentToken.value)}`
   )
+  const json = await res.json()
 
-  const data = await res.json()
-
-  records.value = data.sort((a, b) =>
-    a.date.localeCompare(b.date)
-  )
-
-  if (records.value.length > 0) {
-    const name = records.value[0].name
-    playerName.value = name
-
-    const target = players.value.find(
-      p => String(p.token) === String(currentToken.value)
-    )
-
-    if (target) {
-      target.label = name
-      saveSiblings()
-    }
-  } else {
-    const name = await fetchMemberNameByToken(currentToken.value);
-
-    playerName.value = name ? name : `(${currentToken.value})`;
-
-    const target = players.value.find(
-      p => String(p.token) === String(currentToken.value)
-    );
-    if (target && name) {
-      target.label = name;
-      saveSiblings();
-    }
+  if (json.status !== "ok") {
+    throw new Error(json.message || "dashboard load failed")
   }
+
+  // ① 選手名
+  playerName.value = json.member?.name ? String(json.member.name) : ""
+
+  // ② 種目
+  events.value = Array.isArray(json.events) ? json.events : []
+
+  // 初期選択種目
+  if (events.value.length > 0 && !selectedEvent.value) {
+    selectedEvent.value = events.value[0].id
+  }
+
+  // ③ 記録（event別）
+  recordsByEvent.value = json.recordsByEvent || {}
+
+  // ④ 休暇
+  absences.value = Array.isArray(json.absences) ? json.absences : []
+
+  // ⑤ 兄弟タブのラベル更新（常に member.name が取れるので安定）
+  const target = players.value.find(p => String(p.token) === String(currentToken.value))
+  if (target && playerName.value) {
+    target.label = playerName.value
+    saveSiblings()
+  }
+
+  // 選択中種目の records を作る
+  applySelectedEventRecords_()
 
   await nextTick()
   drawChart()
@@ -434,9 +438,9 @@ function saveSiblings() {
 ================================ */
 async function switchPlayer(token) {
   currentToken.value = String(token || "")
-  selectedYear.value = "" // 兄弟切替時は年フィルタ解除（好みで削除OK）
-  await loadPlayerData()
-  await loadAbsences()
+  selectedYear.value = ""
+  selectedEvent.value = "" // 人が変わるのでリセット
+  await loadDashboard()
 }
 
 /* ===============================
@@ -454,7 +458,7 @@ function extractTokenFromInput(text) {
   const t = String(text || "").trim()
   if (!t) return ""
 
-  // 1) そのまま token が入力された場合（6文字想定だが制限は付けない）
+  // 1) そのまま token が入力された場合
   if (!t.includes("/")) return t
 
   // 2) Hash router URL から抽出（#/player/XXXX）
@@ -468,13 +472,15 @@ function extractTokenFromInput(text) {
   return ""
 }
 
+// ★ 兄弟追加時は名前を事前取得しなくてもOK（切替時のloadDashboardで自動反映）
+// ただ「追加した直後にタブへ名前を出したい」場合だけ使う（任意）
 async function fetchMemberNameByToken(tk) {
   try {
-    const res = await fetch(`${GAS_URL}?type=memberByToken&token=${tk}`);
-    const data = await res.json();
-    return data?.name ? String(data.name) : "";
+    const res = await fetch(`${GAS_URL}?type=memberByToken&token=${encodeURIComponent(tk)}`)
+    const data = await res.json()
+    return data?.name ? String(data.name) : ""
   } catch {
-    return "";
+    return ""
   }
 }
 
@@ -491,10 +497,11 @@ async function addSibling() {
     return
   }
 
-  // ★ 先に名前を取ってラベルにする（記録0件でもOK）
-  const name = await fetchMemberNameByToken(token);
-  players.value.push({ token: String(token), label: name || token });
-  saveSiblings();
+  // 任意：先に名前を取ってラベルにする（無くてもOK）
+  const name = await fetchMemberNameByToken(token)
+
+  players.value.push({ token: String(token), label: name || token })
+  saveSiblings()
 
   // 追加した子に切り替え
   addModalOpen.value = false
@@ -502,37 +509,20 @@ async function addSibling() {
 }
 
 function removeSibling(token) {
+  if (!confirm("この兄弟を削除しますか？")) return
 
-if (!confirm("この兄弟を削除しますか？")) return
-
-players.value = players.value.filter(
-  p => String(p.token) !== String(token)
-)
-
-saveSiblings()
-
-// 今表示中なら本人に戻す
-if (String(currentToken.value) === String(token)) {
-  switchPlayer(baseToken.value)
-}
-}
-/* ===============================
-   休暇履歴取得
-================================ */
-async function loadAbsences() {
-  if (!currentToken.value) return
-
-  const res = await fetch(
-    `${GAS_URL}?type=getAbsenceHistory&token=${currentToken.value}`
+  players.value = players.value.filter(
+    p => String(p.token) !== String(token)
   )
-  const json = await res.json()
 
-  if (json.status === "ok") {
-    absences.value = json.data
-  } else {
-    absences.value = []
+  saveSiblings()
+
+  // 今表示中なら本人に戻す
+  if (String(currentToken.value) === String(token)) {
+    switchPlayer(baseToken.value)
   }
 }
+
 /* ===============================
    休暇登録
 ================================ */
@@ -556,8 +546,9 @@ async function registerAbsence(type) {
   })
 
   absenceDate.value = ""
-  await loadAbsences()
+  await loadDashboard() // ★ 休暇も含めて1回で再取得
 }
+
 /* ===============================
    休暇削除
 ================================ */
@@ -576,12 +567,19 @@ async function deleteAbsence(date) {
     })
   })
 
-  await loadAbsences()
+  await loadDashboard() // ★ 休暇も含めて1回で再取得
 }
+
 /* ===============================
    監視
 ================================ */
-watch(selectedEvent, loadPlayerData)
+
+// ★ 種目が変わってもAPIは呼ばない（recordsByEventから反映）
+watch(selectedEvent, async () => {
+  applySelectedEventRecords_()
+  await nextTick()
+  drawChart()
+})
 
 watch(selectedYear, async () => {
   await nextTick()
@@ -594,7 +592,9 @@ watch(
   async () => {
     loadSiblings()
     currentToken.value = baseToken.value
-    await loadPlayerData()
+    selectedEvent.value = ""
+    selectedYear.value = ""
+    await loadDashboard()
   }
 )
 
@@ -604,9 +604,7 @@ watch(
 onMounted(async () => {
   currentToken.value = baseToken.value
   loadSiblings()
-  await loadEvents()
-  await loadPlayerData()
-  await loadAbsences() 
+  await loadDashboard()
 })
 </script>
 

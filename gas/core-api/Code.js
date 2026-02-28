@@ -5,6 +5,13 @@ function doGet(e) {
 
     const type = e?.parameter?.type;
   
+    if (type === "debugType") {
+        return json_({
+          gotType: e?.parameter?.type || null,
+          gotToken: e?.parameter?.token || null,
+          keys: Object.keys(e?.parameter || {}),
+        });
+      }
     if (type === "members") {
       return json_(getMembers_());
     }
@@ -33,6 +40,10 @@ function doGet(e) {
     // ⑦ 管理者用 全件取得
     if (type === "getAllAbsences") {
       return json_(getAllAbsences_(e));
+    }
+
+    if (type === "playerDashboard") {
+        return json_(getPlayerDashboard_(e));
     }
   
     return json_({ error: "invalid request" });
