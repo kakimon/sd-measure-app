@@ -160,8 +160,9 @@ function doGet(e) {
   
         const today = new Date();
         today.setHours(0,0,0,0);
-  
-        const target = new Date(data.date + "T00:00:00");
+
+        const [y, m, d] = data.date.split("-").map(Number);
+        const target = new Date(y, m - 1, d);
         target.setHours(0,0,0,0);
   
         // 過去日禁止（今日より前は不可）

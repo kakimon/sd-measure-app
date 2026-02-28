@@ -118,11 +118,11 @@ function getPlayerDashboard_(e) {
  * absences: tokenで絞り込み（今日以降のみ）
  * absencesシート想定: [token, name, date, type, updatedAt]
  *************************************************/
-function getAbsencesByToken_(ss, token) {
+  function getAbsencesByToken_(ss, token) {
     const sheet = ss.getSheetByName("absences");
     if (!sheet) return [];
   
-    const values = sheet.getDataRange().getValues(); // ★ sliceしない（forでi=1から）
+    const values = sheet.getDataRange().getValues();
   
     const todayStr = Utilities.formatDate(
       new Date(),
@@ -137,23 +137,24 @@ function getAbsencesByToken_(ss, token) {
   
       if (String(r[0]) !== String(token)) continue;
   
-        let dateStr = "";
-        if (r[2] instanceof Date) {
+      let dateStr;
+  
+      // ★ Date型なら必ずJSTでフォーマット
+      if (r[2] instanceof Date) {
         dateStr = Utilities.formatDate(r[2], "Asia/Tokyo", "yyyy-MM-dd");
-        } else {
+      } else {
         dateStr = String(r[2]).slice(0, 10);
-        }
-
-        if (dateStr < todayStr) continue;
-
-        result.push({
+      }
+  
+      if (dateStr < todayStr) continue;
+  
+      result.push({
         date: dateStr,
         type: r[3],
         updatedAt: r[4],
-        });
+      });
     }
   
-    // 日付降順
     result.sort((a, b) => b.date.localeCompare(a.date));
     return result;
   }
