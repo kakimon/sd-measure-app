@@ -12,7 +12,7 @@
     <!-- ===============================
          ★ 兄弟タブ（タブのみ）
     ================================= -->
-    <div role="tablist" class="tabs tabs-lift mt-4 mb-6 print-hide">
+    <div role="tablist" class="tabs tabs-lift mt-4 mb-3 print-hide">
       <div
         v-for="p in players"
         :key="p.token"
@@ -43,9 +43,31 @@
     </div>
 
     <!-- ===============================
-         🗓 休暇セクション（tabsの外）
+         ★ ページ内タブ（休暇 / 個人記録）
     ================================= -->
-    <div class="card bg-base-100 shadow-md p-6 mb-6">
+    <div class="print-hide mb-6">
+      <div class="tabs tabs-boxed justify-center">
+        <a
+          class="tab"
+          :class="{ 'tab-active': activeTab === 'absence' }"
+          @click="activeTab = 'absence'"
+        >
+          休暇
+        </a>
+        <a
+          class="tab"
+          :class="{ 'tab-active': activeTab === 'record' }"
+          @click="activeTab = 'record'"
+        >
+          個人記録
+        </a>
+      </div>
+    </div>
+
+    <!-- ===============================
+         🗓 休暇セクション（休暇タブのみ表示）
+    ================================= -->
+    <div v-if="activeTab === 'absence'" class="card bg-base-100 shadow-md p-6 mb-6">
       <h2 class="text-lg font-bold mb-4">🗓 休暇連絡</h2>
 
       <input
@@ -72,17 +94,17 @@
 
       <div class="divider">履歴</div>
 
-      <div v-if="absences.length === 0" class="text-gray-400 text-sm">
+      <div v-if="futureAbsences.length === 0" class="text-gray-400 text-sm">
         登録なし
       </div>
 
       <div
-        v-for="a in absences"
+        v-for="a in futureAbsences"
         :key="a.date + ':' + a.type + ':' + a.updatedAt"
         class="flex justify-between items-center border-b py-2"
       >
         <div>
-          {{ a.date }}
+          {{ formatDate(a.date) }}
           <span
             class="badge ml-2"
             :class="a.type==='absent' ? 'badge-error' : 'badge-warning'"
@@ -101,102 +123,109 @@
     </div>
 
     <!-- ===============================
-         印刷時サマリー
+         個人記録（個人記録タブのみ表示）
     ================================= -->
-    <div class="mb-4 print-only">
-      <p><strong>種目：</strong>{{ selectedEventName }}</p>
-      <p><strong>対象年：</strong>
-        {{ selectedYear ? selectedYear + '年' : '全期間' }}
-      </p>
-    </div>
+    <template v-if="activeTab === 'record'">
 
-    <!-- ===============================
-         表示条件カード
-    ================================= -->
-    <div class="card bg-base-100 shadow-md p-6 mb-6 print-hide">
-
-      <div class="flex justify-between items-center mb-4">
-        <h2 class="text-lg font-bold">表示条件</h2>
-
-        <button class="btn btn-neutral btn-sm" @click="exportPDF">
-          📄 PDF出力
-        </button>
+      <!-- ===============================
+           印刷時サマリー
+      ================================= -->
+      <div class="mb-4 print-only">
+        <p><strong>種目：</strong>{{ selectedEventName }}</p>
+        <p><strong>対象年：</strong>
+          {{ selectedYear ? selectedYear + '年' : '全期間' }}
+        </p>
       </div>
 
-      <!-- 種目選択 -->
-      <div class="mb-4">
-        <label class="label">
-          <span class="label-text font-bold text-base">種目選択</span>
-        </label>
+      <!-- ===============================
+           表示条件カード
+      ================================= -->
+      <div class="card bg-base-100 shadow-md p-6 mb-6 print-hide">
 
-        <select
-          v-model="selectedEvent"
-          class="select select-bordered w-full h-14 text-base font-semibold"
-        >
-          <option
-            v-for="event in events"
-            :key="event.id"
-            :value="event.id"
+        <div class="flex justify-between items-center mb-4">
+          <h2 class="text-lg font-bold">表示条件</h2>
+
+          <button class="btn btn-neutral btn-sm" @click="exportPDF">
+            📄 PDF出力
+          </button>
+        </div>
+
+        <!-- 種目選択 -->
+        <div class="mb-4">
+          <label class="label">
+            <span class="label-text font-bold text-base">種目選択</span>
+          </label>
+
+          <select
+            v-model="selectedEvent"
+            class="select select-bordered w-full h-14 text-base font-semibold"
           >
-            {{ event.name }}（{{ event.unit }}）
-          </option>
-        </select>
+            <option
+              v-for="event in events"
+              :key="event.id"
+              :value="event.id"
+            >
+              {{ event.name }}（{{ event.unit }}）
+            </option>
+          </select>
+        </div>
+
+        <!-- 年選択 -->
+        <div>
+          <label class="label">
+            <span class="label-text font-bold text-base">年選択</span>
+          </label>
+
+          <select
+            v-model="selectedYear"
+            class="select select-bordered w-full h-14 text-base font-semibold"
+          >
+            <option value="">全て</option>
+            <option v-for="year in years" :key="year" :value="year">
+              {{ year }}年
+            </option>
+          </select>
+        </div>
+
       </div>
 
-      <!-- 年選択 -->
-      <div>
-        <label class="label">
-          <span class="label-text font-bold text-base">年選択</span>
-        </label>
-
-        <select
-          v-model="selectedYear"
-          class="select select-bordered w-full h-14 text-base font-semibold"
-        >
-          <option value="">全て</option>
-          <option v-for="year in years" :key="year" :value="year">
-            {{ year }}年
-          </option>
-        </select>
+      <!-- ===============================
+           グラフ
+      ================================= -->
+      <div class="card bg-base-100 shadow-md p-6 mb-6">
+        <h2 class="text-lg font-bold mb-4">推移グラフ</h2>
+        <canvas ref="chartCanvas"></canvas>
       </div>
 
-    </div>
+      <!-- ===============================
+           テーブル
+      ================================= -->
+      <div class="card bg-base-100 shadow-md p-6">
+        <h2 class="text-lg font-bold mb-4">記録一覧</h2>
 
-    <!-- ===============================
-         グラフ
-    ================================= -->
-    <div class="card bg-base-100 shadow-md p-6 mb-6">
-      <h2 class="text-lg font-bold mb-4">推移グラフ</h2>
-      <canvas ref="chartCanvas"></canvas>
-    </div>
+        <table class="table w-full">
+          <thead>
+            <tr>
+              <th>日付</th>
+              <th>記録</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-if="filteredRecords.length === 0">
+              <td colspan="2" class="text-center text-gray-400">
+                記録がありません
+              </td>
+            </tr>
 
-    <!-- ===============================
-         テーブル
-    ================================= -->
-    <div class="card bg-base-100 shadow-md p-6">
-      <h2 class="text-lg font-bold mb-4">記録一覧</h2>
+            <tr v-for="record in filteredRecords" :key="record.date + record.value">
+              <td>{{ record.date }}</td>
+              <td class="font-semibold">{{ record.value }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
 
-      <table class="table w-full">
-        <thead>
-          <tr>
-            <th>日付</th>
-            <th>記録</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-if="filteredRecords.length === 0">
-            <td colspan="2" class="text-center text-gray-400">
-              記録がありません
-            </td>
-          </tr>
-
-          <tr v-for="record in filteredRecords" :key="record.date + record.value">
-            <td>{{ record.date }}</td>
-            <td class="font-semibold">{{ record.value }}</td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
+    </template>
 
     <!-- ===============================
          追加モーダル
@@ -248,6 +277,12 @@ const GAS_URL =
   "https://script.google.com/macros/s/AKfycbxqKwmN0lePHkLrQzU4SImrrANWpq4bXA3ZNJhGeufV1XsRNao8LO3RzfhLOYtTis8U/exec"
 
 /* ===============================
+   ★ ページ内タブ（休暇 / 個人記録）
+================================ */
+const activeTab = ref("record") // 初期は個人記録
+const tabStorageKey = computed(() => `playerViewTab:${baseToken.value}`)
+
+/* ===============================
    状態管理
 ================================ */
 const playerName = ref("")
@@ -262,7 +297,6 @@ const recordsByEvent = ref({})
 /* ===============================
    ★ 休暇機能
 ================================ */
-const absenceTab = ref(false)        // タブ切替用（未使用でもOK）
 const absenceDate = ref("")
 const absences = ref([])
 
@@ -310,7 +344,28 @@ const filteredRecords = computed(() => {
   if (!selectedYear.value) return records.value
   return records.value.filter(r => r.date.startsWith(selectedYear.value))
 })
+/* ===============================
+   今日（yyyy-MM-dd）
+================================ */
+const todayStr = computed(() => {
+  const d = new Date()
 
+  const yyyy = d.getFullYear()
+  const mm = String(d.getMonth() + 1).padStart(2, "0")
+  const dd = String(d.getDate()).padStart(2, "0")
+
+  return `${yyyy}-${mm}-${dd}`
+})
+
+/* ===============================
+   今日以降の休暇のみ表示
+================================ */
+const futureAbsences = computed(() => {
+  return absences.value.filter(a => {
+    if (!a?.date) return false
+    return String(a.date).slice(0, 10) >= todayStr.value
+  })
+})
 /* ===============================
    選択種目のrecordsを適用（API不要）
 ================================ */
@@ -352,7 +407,7 @@ async function loadDashboard() {
   // ④ 休暇
   absences.value = Array.isArray(json.absences) ? json.absences : []
 
-  // ⑤ 兄弟タブのラベル更新（常に member.name が取れるので安定）
+  // ⑤ 兄弟タブのラベル更新
   const target = players.value.find(p => String(p.token) === String(currentToken.value))
   if (target && playerName.value) {
     target.label = playerName.value
@@ -370,6 +425,8 @@ async function loadDashboard() {
    グラフ描画
 ================================ */
 function drawChart() {
+  // 個人記録タブの時だけ描画（canvasが無い時に落ちないように）
+  if (activeTab.value !== "record") return
   if (!chartCanvas.value) return
 
   if (chartInstance) chartInstance.destroy()
@@ -472,8 +529,6 @@ function extractTokenFromInput(text) {
   return ""
 }
 
-// ★ 兄弟追加時は名前を事前取得しなくてもOK（切替時のloadDashboardで自動反映）
-// ただ「追加した直後にタブへ名前を出したい」場合だけ使う（任意）
 async function fetchMemberNameByToken(tk) {
   try {
     const res = await fetch(`${GAS_URL}?type=memberByToken&token=${encodeURIComponent(tk)}`)
@@ -497,13 +552,11 @@ async function addSibling() {
     return
   }
 
-  // 任意：先に名前を取ってラベルにする（無くてもOK）
   const name = await fetchMemberNameByToken(token)
 
   players.value.push({ token: String(token), label: name || token })
   saveSiblings()
 
-  // 追加した子に切り替え
   addModalOpen.value = false
   await switchPlayer(token)
 }
@@ -546,7 +599,7 @@ async function registerAbsence(type) {
   })
 
   absenceDate.value = ""
-  await loadDashboard() // ★ 休暇も含めて1回で再取得
+  await loadDashboard()
 }
 
 /* ===============================
@@ -567,14 +620,44 @@ async function deleteAbsence(date) {
     })
   })
 
-  await loadDashboard() // ★ 休暇も含めて1回で再取得
+  await loadDashboard()
+}
+/* ===============================
+   日付表示用フォーマット
+================================ */
+function formatDate(dateStr) {
+  if (!dateStr) return "";
+
+  // 文字列ならそのまま
+  if (typeof dateStr === "string") {
+    return dateStr.slice(0, 10);
+  }
+
+  // Date型ならローカル時間で整形
+  const d = new Date(dateStr);
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+
+  return `${yyyy}-${mm}-${dd}`;
 }
 
 /* ===============================
    監視
 ================================ */
 
-// ★ 種目が変わってもAPIは呼ばない（recordsByEventから反映）
+// ★ タブ保持（tokenごとに保持したいなら baseToken をキーにしているのでOK）
+watch(activeTab, async (val) => {
+  localStorage.setItem(tabStorageKey.value, val)
+
+  // recordに戻った瞬間に描画（canvasが復活するため）
+  if (val === "record") {
+    await nextTick()
+    drawChart()
+  }
+})
+
+// ★ 種目が変わってもAPIは呼ばない
 watch(selectedEvent, async () => {
   applySelectedEventRecords_()
   await nextTick()
@@ -594,6 +677,11 @@ watch(
     currentToken.value = baseToken.value
     selectedEvent.value = ""
     selectedYear.value = ""
+
+    // タブ状態復元
+    const savedTab = localStorage.getItem(tabStorageKey.value)
+    activeTab.value = savedTab === "absence" ? "absence" : "record"
+
     await loadDashboard()
   }
 )
@@ -604,6 +692,11 @@ watch(
 onMounted(async () => {
   currentToken.value = baseToken.value
   loadSiblings()
+
+  // タブ状態復元
+  const savedTab = localStorage.getItem(tabStorageKey.value)
+  activeTab.value = savedTab === "absence" ? "absence" : "record"
+
   await loadDashboard()
 })
 </script>
