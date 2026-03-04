@@ -90,6 +90,11 @@
             </RouterLink>
           </li>
 
+          <li>
+            <RouterLink to="/admin/absence?key=123456">
+              休暇管理一覧
+            </RouterLink>
+          </li>
         </ul>
       </div>
     </div>
