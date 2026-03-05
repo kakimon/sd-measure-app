@@ -7,6 +7,7 @@ import PlayerView from "../views/PlayerView.vue"
 import MembersView from "../views/MembersView.vue"
 import MemberRegisterView from "../views/MemberRegisterView.vue"
 import AdminAbsence from "../views/AdminAbsence.vue"
+import AbsenceCalendar from "../views/AbsenceCalendar.vue"
 
 const routes = [
   {
@@ -47,6 +48,10 @@ const routes = [
     name: "adminAbsence",
     component: AdminAbsence, // ←追加
     meta: { requiresAdmin: true }, // ←追加
+  },
+  {
+    path: "/absence-calendar",
+    component: AbsenceCalendar
   },
 ];
 

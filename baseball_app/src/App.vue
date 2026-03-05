@@ -95,6 +95,11 @@
               休暇管理一覧
             </RouterLink>
           </li>
+          <li>
+            <router-link to="/absence-calendar">
+              休暇カレンダー
+            </router-link>
+          </li>
         </ul>
       </div>
     </div>
