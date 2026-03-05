@@ -4,5 +4,8 @@
     "daisyui": "^5.5.18",
     "postcss": "^8.5.6",
     "tailwindcss": "^4.1.18"
+  },
+  "dependencies": {
+    "@fullcalendar/vue3": "^6.1.20"
   }
 }
