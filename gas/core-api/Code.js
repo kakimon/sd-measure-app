@@ -40,6 +40,9 @@ function doGet(e) {
     return json_(getMemberByToken_(e));
   }
 
+  if (type === "absences") {
+    return json_(getAbsences_());
+  }
   // ⑥ 休暇履歴取得
   if (type === "getAbsenceHistory") {
     return json_(getAbsenceHistory_(e));
@@ -52,7 +55,7 @@ function doGet(e) {
 
   if (type === "playerDashboard") {
       return json_(getPlayerDashboard_(e));
-    }
+  }
 
   return json_({ error: "invalid request" });
 }
