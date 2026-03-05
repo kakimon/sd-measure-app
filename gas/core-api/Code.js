@@ -1,7 +1,6 @@
 /*************************************************
  * 定数
  *************************************************/
-const SPREADSHEET_ID = "AKfycbxqKwmN0lePHkLrQzU4SImrrANWpq4bXA3ZNJhGeufV1XsRNao8LO3RzfhLOYtTis8U";
 const ADMIN_KEY = "123456"; // Vueと一致させる
 
 /*************************************************
@@ -198,7 +197,7 @@ function doPost(e) {
       sheet.appendRow([
         data.token,
         playerName,
-        data.date,
+        "'" + data.date,   // ← 強制文字列
         data.absenceType, // absent / continue
         new Date().toISOString(),
       ]);
